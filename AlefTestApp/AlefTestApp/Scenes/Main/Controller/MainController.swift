@@ -7,6 +7,14 @@
 
 import UIKit
 
+enum AFSection: Int, CaseIterable {
+    case personalData, childrenData
+    
+    enum AFPersonalData: Int {
+        case nameTextField, ageTextField
+    }
+}
+
 final class MainController: BaseCollectionViewController {
     
     private var personalData: AFPerson?
@@ -19,35 +27,40 @@ final class MainController: BaseCollectionViewController {
     private weak var ageCell: AFPersonalDataCell?
     
     override func numberOfSections(in collectionView: UICollectionView) -> Int {
-        2
+        AFSection.allCases.count
     }
     
     override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        guard let section = AFSection(rawValue: section) else { return 0 }
+        
         switch section {
-            case 0: return 2
-            case 1: return childrenData.count
-            default: return 0
+            case .personalData:
+                return 2
+            case .childrenData:
+                return childrenData.count
         }
     }
     
     override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        switch indexPath.section {
-            case 0:
-                switch indexPath.item {
-                    case 0:
+        guard let section = AFSection(rawValue: indexPath.section) else { fatalError() }
+        
+        switch section {
+            case .personalData:
+                guard let item = AFSection.AFPersonalData(rawValue: indexPath.item) else { fatalError() }
+                
+                switch item {
+                    case .nameTextField:
                         let cell = collectionView.getReuseCell(AFPersonalDataCell.self, indexPath: indexPath)
                         self.nameCell = cell
                         cell.setup(title: "Имя", type: .default, text: personalData?.name)
                         return cell
-                    case 1:
+                    case .ageTextField:
                         let cell = collectionView.getReuseCell(AFPersonalDataCell.self, indexPath: indexPath)
                         self.ageCell = cell
                         cell.setup(title: "Возраст", type: .numberPad, text: "\(personalData?.age ?? 0)" )
                         return cell
-                    default:
-                        fatalError()
                 }
-            default:
+            case .childrenData:
                 let cell = collectionView.getReuseCell(AFChildrenDataCell.self, indexPath: indexPath)
                 let children = childrenData[indexPath.item]
                 cell.setup(name: children.name ?? "", age: children.age ?? 0) { [weak self] in
@@ -69,13 +82,15 @@ final class MainController: BaseCollectionViewController {
     }
     
     override func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
-        switch indexPath.section {
-            case 0:
+        guard let section = AFSection(rawValue: indexPath.section) else { fatalError() }
+        
+        switch section {
+            case .personalData:
                 let header = collectionView.getReuseSupplementaryView(AFHeader.self, indexPath: indexPath)
                 header.tag = 1
                 header.setup(R.Strings.Headers.personalData)
                 return header
-            case 1:
+            case .childrenData:
                 if kind == AFHeader.identifier {
                     let header = collectionView.getReuseSupplementaryView(AFHeader.self, indexPath: indexPath)
                     header.tag = childrenData.count == 5 ? 1 : 2
@@ -93,8 +108,6 @@ final class MainController: BaseCollectionViewController {
                     }
                     return footer
                 }
-            default:
-                fatalError()
         }
     }
     
@@ -177,7 +190,7 @@ extension MainController {
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         item.contentInsets = NSDirectionalEdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0)
         
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(180))
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(167))
         let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
         
         let section = NSCollectionLayoutSection(group: group)
